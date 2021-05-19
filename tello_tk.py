@@ -30,8 +30,20 @@ class myApp:
     def getLeapData(self):
         while self.running:
             try:
-                msg = self.leap_socket.recv(128).decode()
-                self.lbl.config(text=msg)
+                
+                msg = self.leap_socket.recv(1000).decode()
+                param_list = msg.split()
+                print(param_list) # LR FB UD ROT
+                self.canvas.delete("all")
+                self.canvas.create_rectangle(105,105,115,115)
+                self.canvas.create_rectangle(305,105,315,115)
+                
+                self.canvas.create_rectangle(110,105,110+int(param_list[4]),115)
+                self.canvas.create_rectangle(105,110,115,110+int(param_list[3]))
+                
+                self.canvas.create_rectangle(310,105,310+int(param_list[1]),115)
+                self.canvas.create_rectangle(305,110,315,110-int(param_list[2]))
+                
             except:
                 print( sys.exc_info()[0] )
                 print( sys.exc_info()[1] )
@@ -92,7 +104,7 @@ class myApp:
         self.LeapSrv.start()
         
         self.leap_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.leap_socket.connect(("127.0.0.1", 3331))
+        self.leap_socket.connect(("127.0.0.1", 3221))
         ## self.leap_socket.settimeout(1)
         
         self.leapThread = Thread(target=self.getLeapData)
@@ -147,10 +159,13 @@ class myApp:
         self.btn_Video.pack( side = LEFT )
         self.btn_V_Off.pack( side = LEFT )
         self.btn_SDK.pack( side = LEFT )
-
+        
         self.lbl_Response = Label(self.frame_Top, text='Response:  ')
         self.lbl_Battery = Label(self.frame_Top, text='Battery:  ')
         self.lbl_Height = Label(self.frame_Top, text='Height:  ')
+        ##
+        self.canvas = Canvas(self.root, height = 220, width = 440)
+        self.canvas.grid(column=0, row=5)
 
         self.lbl_Response.pack(side=LEFT)
         self.lbl_Battery.pack(side=LEFT)
@@ -164,9 +179,9 @@ class myApp:
         
         self.btn_Apply=Button(self.root, text="Apply", command=self.applySettings)
         self.btn_Apply.grid(column=0, row=4)
-        
+        ## canvas
         self.lbl_Video = Label(self.root, text = "video")
-        self.lbl_Video.grid(column=0, row=5)
+        self.lbl_Video.grid(column=0, row=6)
 
     def applySettings(self):
         maxSpeed = self.scale_MaxSpeed.get()
@@ -188,7 +203,7 @@ class LeapServer:
         self.leap_socket.connect(("127.0.0.1", 3224))
         
         self.gui_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.gui_socket.bind(("127.0.0.1", 3331))
+        self.gui_socket.bind(("127.0.0.1", 3221))
         self.gui_socket.listen(1)
 
         self.GUIsock = None
@@ -218,18 +233,17 @@ class LeapServer:
                 
                 #ha nem olvas elég gyorsan több üzenet lesz a bufferben
                 if len(param_list) == 24:
-                
+                    #tenyer normalvektora, tenyer iranyvektora, tenyer koordinatai
                     palm = np.array(param_list[0:9]).astype('float32')
                     palm = palm.reshape(3,3)
-                    #tenyer normalvektora, tenyer iranyvektora, tenyer koordinatai
                     
-                    ## TODO self.GUIsock.send(msg.encode('utf-8'))
-                   
+                    #ujjak iranyvektorai nagyujjtol kezdve [[x, y, z], ...]
                     fingers = np.array(param_list[9:25]).astype('float32')
                     fingers = fingers.reshape(5,3)
-                    #ujjak iranyvektorai nagyujjtol kezdve [[x, y, z], ...]
+                    
                     cmnd = self.hand.getControlParameters(palm, fingers)
-                    print(cmnd)
+
+                    self.GUIsock.send(cmnd.encode('utf-8'))
                     self.sock.sendto(cmnd.encode("utf-8"), TELLO_ADDRESS)
                     
             except socket.timeout:

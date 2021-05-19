@@ -82,7 +82,7 @@ class Hand:
         #TODO ez csak jobb kézre jó. bal kéz esetén fordítva kell beszorozni
         origo_palm_perp = vg.perpendicular(self.origo[1], self.origo[0])
         palm_perp = vg.perpendicular(self.palm[1], self.palm[0])
-
+        
         ## signed angle between origo palm norm and rejection of palm norm from origo palm dir, look is origo palm dir
         ## REGI signed angle between n0 and rejection of palm norm from origo palm dir, look is origo palm dir
         #NEW## signed angle between origo palm norm and rejection of palm norm from (rejetfion of palm dir from origo palm norm), look is (palm dir)      
@@ -91,26 +91,30 @@ class Hand:
             self.speed_LR = vg.signed_angle( self.origo[0], vg.reject(self.palm[0], vg.reject(self.palm[1], self.origo[0])), self.origo[1] )
         else:
             self.speed_LR = 0
-            
+
         if self.FB:
             ## signed angle between origo palm norm and rejection of palm norm from origo palm perpendicular, look is origo palm perpendicular
             ## REGI self.speed_FB = vg.signed_angle( self.origo[1], vg.reject(self.palm[1], origo_palm_perp), origo_palm_perp )
             # NEW## signed angle between origo palm norm and rejection of palm norm from (rejection of palm perpendicular from origo palm norm), look is origo palm perpendicular
-            self.speed_FB = vg.signed_angle( self.origo[0], vg.reject(self.palm[0], vg,reject(palm_perp, self.origo[0])), origo_palm_perp )
+            asd = vg.signed_angle( self.origo[0], vg.reject(self.palm[0], vg.reject(palm_perp, self.origo[0])), origo_palm_perp )
+            self.speed_FB = asd
+
         else:
-            self.speed_FB = 0
             
+            self.speed_FB = 0
+         
         ## distance between origo y and palm y
         if self.UD:
             self.speed_UD = self.palm[2][1] - self.origo[2][1]
         else:
             self.speed_UD = 0
-            
+           
         ## signed angle between origo palm dir and rejection of palm dir from origo palm norm, look is origo palm norm
         if self.ROT:
             self.speed_ROT = vg.signed_angle(self.origo[1], vg.reject(self.palm[1], self.origo[0]), self.origo[0] )
         else:
             self.speed_ROT = 0
+        
         
     def roundAngles(self):
         # TODO forgatást megszorozni? vagy valahol gyorsítani
@@ -135,7 +139,7 @@ class Hand:
             
             
     def getControlParameters(self, palm, fingers):
-    
+        
         self.palm = palm
         self.fingers = fingers
               
@@ -146,7 +150,7 @@ class Hand:
         if self.origo_isSet:
             
             self.CalculateAngles()
-            
+
             self.roundAngles()
             msg = "rc " + str(int(self.speed_LR)) + " " + str(int(self.speed_FB)) + " " + str(int(self.speed_UD)) + " " + str(int(self.speed_ROT))
             return msg
