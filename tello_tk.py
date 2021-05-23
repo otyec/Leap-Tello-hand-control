@@ -18,6 +18,7 @@ from PIL import ImageTk
 import imutils
 
 import numpy as np
+import math
 
 from tello import Tello
 import handState as hs
@@ -65,7 +66,7 @@ class myApp:
                 
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = imutils.resize(frame, height=360, width=480)
-                image = Image.fromarray(image)
+                image = Image.fromarray(frame)
                 image = ImageTk.PhotoImage(image)
                 self.lbl_Video.configure(image=image)
                 self.lbl_Video.image=image
@@ -120,15 +121,22 @@ class myApp:
     def updateState(self):
     ##TODO csekk sef.running-ra ? de a main looppal egyutt lehet bezárul a socket miatt
         self.response = self.Tello.getResponse()
-        self.state = self.Tello.getState()
+        state = self.Tello.getState()
         try:
             self.lbl_Response.configure( text = "response" + self.response )
-            self.lbl_Battery.configure( text = "battery: " + self.state['bat'] + "%" )
-            self.lbl_Height.configure( text = "height: " + self.state['h'] + "cm")
+            
+            vgx = float(state['vgx'])
+            vgy = float(state['vgy'])
+            vgz = float(state['vgz'])
+            speed = math.sqrt(vgx*vgx + vgy+vgy + vgz+vgz)
+            print("Battery: " +state['bat'] +" Speed: "+ str(speed) + " Height: " + state['h'])
+            self.lbl_State.configure( text = "Battery: " +state['bat'] +" Speed: "+ str(speed) + " Height: " + state['h'])
         except:
+            print( sys.exc_info()[0] )
+            print( sys.exc_info()[1] )
             pass
         self.root.after(66, self.updateState)
-          
+        
         
     def onClosing(self):
         self.Tello.StopListen()
@@ -161,15 +169,14 @@ class myApp:
         self.btn_SDK.pack( side = LEFT )
         
         self.lbl_Response = Label(self.frame_Top, text='Response:  ')
-        self.lbl_Battery = Label(self.frame_Top, text='Battery:  ')
-        self.lbl_Height = Label(self.frame_Top, text='Height:  ')
+        self.lbl_State = Label(self.frame_Top, text='State: ...')
+
+        self.lbl_Response.pack(side=LEFT)
+        self.lbl_State.pack(side=LEFT)
+        
         ##
         self.canvas = Canvas(self.root, height = 220, width = 440)
         self.canvas.grid(column=0, row=5)
-
-        self.lbl_Response.pack(side=LEFT)
-        self.lbl_Battery.pack(side=LEFT)
-        self.lbl_Height.pack(side=LEFT)
         
         self.scale_ZeroZone=Scale(self.root, label="holtjáték", from_=0, to=30, orient=HORIZONTAL)
         self.scale_MaxSpeed=Scale(self.root, label="max sebesség", from_=0, to=100, orient=HORIZONTAL)
